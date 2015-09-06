@@ -1,0 +1,41 @@
+* {
+	margin: 0;
+	padding: 0;
+}
+html, body {
+	height: 100%;
+	width: 100%;
+}
+#container {
+	position: relative;
+	width: 537px;
+	height: 605px;
+	border: 1px solid red;
+	z-index: 10;
+}
+#chessboard {
+	position: absolute;
+	z-index: 0;
+	border: 1px solid blue;
+	top: 0px;
+	left: 0px;
+}
+#chess {
+	position: absolute;
+	z-index: 1;
+	top: 0px;
+	left: 0px;
+}
+#chessheader {
+	position: absolute;
+	z-index: 10;
+	border: 1px solid red;
+	top: 0px;
+	left: 0px;
+	padding: 5px;
+	width:100px;
+	height:30px;
+}
+
+
+

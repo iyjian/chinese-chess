@@ -1,0 +1,152 @@
+<!DOCTYPE HTML>
+<html>
+	<head>
+		<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+		<title>中国象棋</title>
+		<!--[if IE]><script type="text/javascript" src="./js/excanvas.js"></script><![endif]-->
+		<script src="./js/jquery.js"></script>
+		<script src="./js/jquery.cookie.js"></script>
+		<script src="./js/jquery.json-2.3.min.js"></script>
+		<script src="./js/chessboard.js"></script>
+		<script src="./js/movechess.js"></script>
+		<script src="/socket.io/socket.io.js"></script>
+		<link href="./css/main.css" rel="stylesheet" type="text/css" />
+		<script>
+			$(document).ready(function() {
+				//player=-1表示该红方走 player=1 表示该黑方走
+				//signal   
+				var width = 55;
+				//width = Math.min($(window).get(0).innerWidth, $(window).get(0).innerHeight) / 15;
+				var chessradius = 0.35;
+				var startpoint = [50.5, 70.5];
+				var chesstarget = new Array();
+				var userdata = {
+					userid : -1,
+					partnerid : 'unknown',
+					player : -1, //表示该谁走
+					moves : 0,
+					winner :0,
+					signal : -1,  //signal == 表示我是什么人  -1 是先手
+					selectedchess : [-1, -1],  //[-1,-1]表示没有选中棋子
+					checkpoint : [[["车", 1], ["马", 1], ["象", 1], ["士", 1], ["将", 1], ["士", 1], ["象", 1], ["马", 1], ["车", 1]], [["", 0], ["", 0], ["", 0], ["", 0], ["", 0], ["", 0], ["", 0], ["", 0], ["", 0]], [["", 0], ["炮", 1], ["", 0], ["", 0], ["", 0], ["", 0], ["", 0], ["炮", 1], ["", 0]], [["卒", 1], ["", 0], ["卒", 1], ["", 0], ["卒", 1], ["", 0], ["卒", 1], ["", 0], ["卒", 1]], [["", 0], ["", 0], ["", 0], ["", 0], ["", 0], ["", 0], ["", 0], ["", 0], ["", 0]], [["", 0], ["", 0], ["", 0], ["", 0], ["", 0], ["", 0], ["", 0], ["", 0], ["", 0]], [["兵", -1], ["", 0], ["兵", -1], ["", 0], ["兵", -1], ["", 0], ["兵", -1], ["", 0], ["兵", -1]], [["", 0], ["砲", -1], ["", 0], ["", 0], ["", 0], ["", 0], ["", 0], ["砲", -1], ["", 0]], [["", 0], ["", 0], ["", 0], ["", 0], ["", 0], ["", 0], ["", 0], ["", 0], ["", 0]], [["車", -1], ["馬", -1], ["相", -1], ["仕", -1], ["帥", -1], ["仕", -1], ["相", -1], ["馬", -1], ["車", -1]]],
+				};
+                var socket = io.connect('http://172.16.0.15:3000');
+                //监听匹配事件
+                socket.on('match',function(data){
+ 	                        userdata.signal = data.signal;
+ 	                        userdata.player = data.player;
+ 	                        userdata.partnerid = data.partnerId;
+ 	                        redrawchess(width, startpoint, chessradius, userdata.checkpoint, userdata.selectedchess, userdata.signal);
+ 	                        if(userdata.signal==userdata.player){
+ 	                        	$('#status').empty().append('快走快走！').css('background-color','green');
+ 	                        	}else{
+ 	                        		$('#status').empty().append('还没轮到你！').css('background-color','red');
+ 	                        	}
+                    });
+                //监听移动事件    
+                socket.on('move',function(data){
+ 	                        userdata = data;
+ 	                        redrawchess(width, startpoint, chessradius, userdata.checkpoint, userdata.selectedchess, userdata.signal);
+ 	                        console.log(userdata);
+ 	                        if(userdata.signal==userdata.player){
+ 	                        	$('#status').empty().append('快走快走！').css('background-color','green');
+ 	                        	}else{
+ 	                        		$('#status').empty().append('还没轮到你！').css('background-color','red');
+ 	                        	}
+ 	                        if(userdata.winner!=0){
+ 	                           if(userdata.winner==userdata.signal){
+ 	                           	      alert('你赢了！');
+ 	                           }else{
+ 	                           	      userdata.player=userdata.player*-1;
+ 	                           	      alert('你完蛋了！');
+ 	                           }
+ 	                        }
+                    });
+				/*********** SET COOKIE AND USERDATA*/
+				// var UserID;
+				userdata.userid = Math.round(Math.random() * 10000);
+				// if($.cookie("UserID") == "" || $.cookie("UserID") == null) {
+					// UserID = Math.round(Math.random() * 10000);
+					// $.cookie("UserID", UserID.toString(), {expires : 365});
+				// }
+				// $('#userid').append(UserID);
+				// userdata.userid = UserID;
+				/*********** SET COOKIE AND USERDATA
+				 * 
+				 * 
+				 * 
+				 * 
+				 * */
+				draw_chessboard(width, startpoint);
+				         //棋盘宽        棋盘初始点           棋子大小                   盘面                                            选中的棋子                                         先手后手
+				//redrawchess(width, startpoint, chessradius, userdata.checkpoint, userdata.selectedchess, userdata.signal);
+				
+				$("#chess").click(function(event) {
+					var posX = event.pageX - $(this).offset().left - startpoint[0];
+					var posY = event.pageY - $(this).offset().top  - startpoint[1];
+					var i, j;
+					i = Math.round(posX / width);
+					//通过鼠标点击标记i
+					j = Math.round(posY / width);
+
+					//通过鼠标点击标记j
+					//大前提是点中了棋子的位置！！！
+					if(Math.sqrt((posX - i * width) * (posX - i * width) + (posY - j * width) * (posY - j * width)) <= chessradius * width) {
+
+						//如果是黑方 我必須把i,j翻转过来
+						i = (userdata.signal == 1) ? 8 - i : i;
+						j = (userdata.signal == 1) ? 9 - j : j;
+
+						//Situation 1.点在行动方的棋子上------取消其他棋子的选中状态，并选中点击棋子
+						if( userdata.signal == userdata.player && userdata.checkpoint[j][i][1] == userdata.player ) {
+							//step1.取消其他棋子的选中(能不能写成redrawborder函数，写了一下好像不行诶)
+
+							//step2.标记并记录现在被选中的棋子
+							userdata.selectedchess = [j, i];
+							//step3.标记并记录被选中棋子的可走位置
+							chesstarget = showTarget(userdata.player, userdata.checkpoint, j, i);
+							redrawchess(width, startpoint, chessradius, userdata.checkpoint, userdata.selectedchess, userdata.signal);
+						}
+
+						//如果不是点在本方棋子上,并且有棋子被选中
+						if(userdata.checkpoint[j][i][1] != userdata.player & userdata.selectedchess[0] != -1) {
+							$.each(chesstarget, function(index, value) {
+								
+								if(j == value[0] && i == value[1]) {
+									
+									if(userdata.checkpoint[j][i][0]=='将' || userdata.checkpoint[j][i][0] == '帥'){
+										userdata.winner=userdata.signal;
+										}
+									//更改顺序，把选择的棋子移动到i,j上
+									userdata.checkpoint = move(userdata.selectedchess, j, i, userdata.checkpoint);
+									userdata.selectedchess[0] = -1;
+									userdata.selectedchess[1] = -1;
+									userdata.moves++;
+									
+									console.log('movechess',userdata);
+							        socket.emit('move', userdata);
+								}
+							});
+							
+							
+						}
+					}
+				});
+				
+				$('#join').click(function() {
+					socket.emit('login', { user: userdata.userid });
+				});
+			});
+
+		</script>
+	</head>
+	<body>
+		<div id="container">
+			<div id="chessheader">
+				<table><tr><td><button id="join">我要参战</button></td><td id="status"></td></tr></table>
+			</div>
+			<canvas id="chessboard"></canvas>
+			<canvas id="chess"></canvas>
+		</div>
+	</body>
+</html>
