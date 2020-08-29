@@ -15,11 +15,14 @@
 			$(document).ready(function() {
 				//player=-1表示该红方走 player=1 表示该黑方走
 				//signal   
-				var width = 55;
-				//width = Math.min($(window).get(0).innerWidth, $(window).get(0).innerHeight) / 15;
-				var chessradius = 0.35;
-				var startpoint = [50.5, 70.5];
-				var chesstarget = new Array();
+				var width = 55
+				
+				var chessradius = 0.35
+
+				var startpoint = [50.5, 70.5]
+
+				var chesstarget = new Array()
+
 				var userdata = {
 					userid : -1,
 					partnerid : 'unknown',
@@ -29,39 +32,71 @@
 					signal : -1,  //signal == 表示我是什么人  -1 是先手
 					selectedchess : [-1, -1],  //[-1,-1]表示没有选中棋子
 					checkpoint : [[["车", 1], ["马", 1], ["象", 1], ["士", 1], ["将", 1], ["士", 1], ["象", 1], ["马", 1], ["车", 1]], [["", 0], ["", 0], ["", 0], ["", 0], ["", 0], ["", 0], ["", 0], ["", 0], ["", 0]], [["", 0], ["炮", 1], ["", 0], ["", 0], ["", 0], ["", 0], ["", 0], ["炮", 1], ["", 0]], [["卒", 1], ["", 0], ["卒", 1], ["", 0], ["卒", 1], ["", 0], ["卒", 1], ["", 0], ["卒", 1]], [["", 0], ["", 0], ["", 0], ["", 0], ["", 0], ["", 0], ["", 0], ["", 0], ["", 0]], [["", 0], ["", 0], ["", 0], ["", 0], ["", 0], ["", 0], ["", 0], ["", 0], ["", 0]], [["兵", -1], ["", 0], ["兵", -1], ["", 0], ["兵", -1], ["", 0], ["兵", -1], ["", 0], ["兵", -1]], [["", 0], ["砲", -1], ["", 0], ["", 0], ["", 0], ["", 0], ["", 0], ["砲", -1], ["", 0]], [["", 0], ["", 0], ["", 0], ["", 0], ["", 0], ["", 0], ["", 0], ["", 0], ["", 0]], [["車", -1], ["馬", -1], ["相", -1], ["仕", -1], ["帥", -1], ["仕", -1], ["相", -1], ["馬", -1], ["車", -1]]],
-				};
-                var socket = io.connect('http://172.16.0.15:3000');
+				}
+                
+        var socket = io.connect('http://172.16.0.15:3000')
+
+                /**
+
+								match:
+								{
+									// 你是先手还是后手
+									signal: -1,
+									// 现在该谁走
+									player: -1,
+									// 对方的编号
+									partnerid: 10
+								}
+                */
+
                 //监听匹配事件
-                socket.on('match',function(data){
- 	                        userdata.signal = data.signal;
- 	                        userdata.player = data.player;
- 	                        userdata.partnerid = data.partnerId;
- 	                        redrawchess(width, startpoint, chessradius, userdata.checkpoint, userdata.selectedchess, userdata.signal);
- 	                        if(userdata.signal==userdata.player){
- 	                        	$('#status').empty().append('快走快走！').css('background-color','green');
- 	                        	}else{
- 	                        		$('#status').empty().append('还没轮到你！').css('background-color','red');
- 	                        	}
-                    });
-                //监听移动事件    
-                socket.on('move',function(data){
- 	                        userdata = data;
- 	                        redrawchess(width, startpoint, chessradius, userdata.checkpoint, userdata.selectedchess, userdata.signal);
- 	                        console.log(userdata);
- 	                        if(userdata.signal==userdata.player){
- 	                        	$('#status').empty().append('快走快走！').css('background-color','green');
- 	                        	}else{
- 	                        		$('#status').empty().append('还没轮到你！').css('background-color','red');
- 	                        	}
- 	                        if(userdata.winner!=0){
- 	                           if(userdata.winner==userdata.signal){
- 	                           	      alert('你赢了！');
- 	                           }else{
- 	                           	      userdata.player=userdata.player*-1;
- 	                           	      alert('你完蛋了！');
- 	                           }
- 	                        }
-                    });
+        socket.on('match', function (data) {
+
+          userdata.signal = data.signal;
+          userdata.player = data.player;
+          userdata.partnerid = data.partnerId;
+
+          redrawchess(width, startpoint, chessradius, userdata.checkpoint, userdata.selectedchess, userdata.signal)
+
+          if (userdata.signal == userdata.player) {
+          	$('#status').empty().append('快走快走！').css('background-color','green')
+          } else {
+          	$('#status').empty().append('还没轮到你！').css('background-color','red')
+          }
+        })
+
+        /*
+
+				move:
+				move事件会传来对方的整个盘面，这里我肯定在服务端做了signal的反转
+				{
+					
+				}
+
+        */
+
+        //监听移动事件    
+        socket.on('move', function (data) {
+          userdata = data
+          redrawchess(width, startpoint, chessradius, userdata.checkpoint, userdata.selectedchess, userdata.signal)
+
+          console.log(userdata)
+
+          if (userdata.signal == userdata.player) {
+          	$('#status').empty().append('快走快走！').css('background-color','green');
+          	}else{
+          		$('#status').empty().append('还没轮到你！').css('background-color','red');
+          	}
+          if(userdata.winner!=0){
+             if(userdata.winner==userdata.signal){
+             	      alert('你赢了！');
+             }else{
+             	      userdata.player=userdata.player*-1;
+             	      alert('你完蛋了！');
+             }
+          }
+        })
+
 				/*********** SET COOKIE AND USERDATA*/
 				// var UserID;
 				userdata.userid = Math.round(Math.random() * 10000);

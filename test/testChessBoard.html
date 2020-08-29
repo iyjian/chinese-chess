@@ -1,0 +1,107 @@
+<!DOCTYPE HTML>
+<html>
+	<head>
+		<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+		<title>中国象棋</title>
+		<!--[if IE]><script type="text/javascript" src="./js/excanvas.js"></script><![endif]-->
+		<script src="./../js/jquery.js"></script>
+		<script src="./../js/jquery.cookie.js"></script>
+		<script src="./../js/jquery.json-2.3.min.js"></script>
+		<script src="./../js/chessboard.js"></script>
+		<script src="./../js/movechess.js"></script>
+		<link href="./../css/main.css" rel="stylesheet" type="text/css" />
+		<script>
+			$(document).ready(function() {
+        const canvas = $('#chessboard')
+				//player=-1表示该红方走 player=1 表示该黑方走
+				//signal   
+				var width = 55
+				
+				var chessradius = 0.35
+
+				var startpoint = [50.5, 70.5]
+
+				var chesstarget = new Array()
+
+				const userdata = {
+					userid : -1,
+					partnerid : 'unknown',
+					player : -1, //表示该谁走
+					moves : 0,
+					winner :0,
+					signal : -1,  //signal == 表示我是什么人  -1 是先手
+					selectedchess : [-1, -1],  // [-1,-1]表示没有选中棋子
+					checkpoint : [[["车", 1], ["马", 1], ["象", 1], ["士", 1], ["将", 1], ["士", 1], ["象", 1], ["马", 1], ["车", 1]], [["", 0], ["", 0], ["", 0], ["", 0], ["", 0], ["", 0], ["", 0], ["", 0], ["", 0]], [["", 0], ["炮", 1], ["", 0], ["", 0], ["", 0], ["", 0], ["", 0], ["炮", 1], ["", 0]], [["卒", 1], ["", 0], ["卒", 1], ["", 0], ["卒", 1], ["", 0], ["卒", 1], ["", 0], ["卒", 1]], [["", 0], ["", 0], ["", 0], ["", 0], ["", 0], ["", 0], ["", 0], ["", 0], ["", 0]], [["", 0], ["", 0], ["", 0], ["", 0], ["", 0], ["", 0], ["", 0], ["", 0], ["", 0]], [["兵", -1], ["", 0], ["兵", -1], ["", 0], ["兵", -1], ["", 0], ["兵", -1], ["", 0], ["兵", -1]], [["", 0], ["砲", -1], ["", 0], ["", 0], ["", 0], ["", 0], ["", 0], ["砲", -1], ["", 0]], [["", 0], ["", 0], ["", 0], ["", 0], ["", 0], ["", 0], ["", 0], ["", 0], ["", 0]], [["車", -1], ["馬", -1], ["相", -1], ["仕", -1], ["帥", -1], ["仕", -1], ["相", -1], ["馬", -1], ["車", -1]]],
+				}
+        
+        redrawchess(width, startpoint, chessradius, userdata.checkpoint, userdata.selectedchess, userdata.signal)
+
+				draw_chessboard(canvas, width, startpoint);
+				
+				$("#chess").click(function(event) {
+
+
+          // 如果没有轮到本方走，则什么也不做，可以给一个提示
+          if (userdata.signal !== userdata.player) {
+            return
+          }
+
+          // 以下是为了获取点中棋子的横坐标和纵坐标
+					var posX = event.pageX - $(this).offset().left - startpoint[0];
+					var posY = event.pageY - $(this).offset().top  - startpoint[1];
+					let i = Math.round(posX / width);
+					let j = Math.round(posY / width);
+          
+          // 判断点击位置是否在棋子中心
+					if(Math.sqrt((posX - i * width) * (posX - i * width) + (posY - j * width) * (posY - j * width)) <= chessradius * width) {
+
+						//如果是黑方 我必須把i,j翻转过来
+						i = (userdata.signal == 1) ? 8 - i : i;
+						j = (userdata.signal == 1) ? 9 - j : j;
+
+						//Situation 1.点在自己的棋子上，则取消其他棋子的选中状态，并选中点击的棋子
+						if( userdata.checkpoint[j][i][1] == userdata.player ) {
+							//step1.取消其他棋子的选中(能不能写成redrawborder函数，写了一下好像不行诶)
+
+							//step2.标记并记录现在被选中的棋子
+              userdata.selectedchess = [j, i];
+              
+							//step3.标记并记录被选中棋子的可走位置
+							chesstarget = showTarget(userdata.player, userdata.checkpoint, j, i);
+							redrawchess(width, startpoint, chessradius, userdata.checkpoint, userdata.selectedchess, userdata.signal);
+						}
+
+						//如果不是点在本方棋子上,并且有棋子被选中
+						if(userdata.checkpoint[j][i][1] != userdata.player & userdata.selectedchess[0] != -1) {
+							$.each(chesstarget, function(index, value) {
+								
+								if(j == value[0] && i == value[1]) {
+									if(userdata.checkpoint[j][i][0]=='将' || userdata.checkpoint[j][i][0] == '帥'){
+										userdata.winner=userdata.signal;
+										}
+									//更改顺序，把选择的棋子移动到i,j上
+									userdata.checkpoint = move(userdata.selectedchess, j, i, userdata.checkpoint);
+									userdata.selectedchess[0] = -1;
+									userdata.selectedchess[1] = -1;
+									userdata.moves++;
+								}
+							});
+
+						}
+					}
+				});
+
+			});
+
+		</script>
+	</head>
+	<body>
+		<div id="container">
+			<div id="chessheader">
+				<table><tr><td><button id="join">我要参战</button></td><td id="status"></td></tr></table>
+			</div>
+			<canvas id="chessboard"></canvas>
+			<canvas id="chess"></canvas>
+		</div>
+	</body>
+</html>
