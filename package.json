@@ -1,5 +1,8 @@
 {
   "dependencies": {
-    "canvas": "^2.6.1"
+    "canvas": "^2.6.1",
+    "log4js": "^6.3.0",
+    "wechaty": "^0.48.13",
+    "wechaty-puppet-padlocal": "^0.2.3"
   }
 }

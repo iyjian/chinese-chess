@@ -1,17 +1,13 @@
-const { createCanvas, loadImage } = require('canvas')
 const ChessBattle = require('../libs/ChessBattle')
+const path = require('path')
 const { FileBox } = require('file-box')
 
 
-chessBattle = new ChessBattle()
-
-const canvas = chessBattle.getCanvas()
-
-chessBattle.drawChessBoard()
+const battle = new ChessBattle()
 
 // moving chess, if not a valid move, throw exception
-chessBattle.select([0, 0], -1).move([2, 0], -1)
+battle.selectAndMove([0, 0], [2, 0], -1)
 
-chessBattle.getBattleSnapshot(-1)
+FileBox.fromDataURL(battle.getSnapshot(-1).toDataURL(), 'black.png').toFile(path.join(__dirname, './../tmp/black.png'), true)
 
-FileBox.fromDataURL(canvas.toDataURL(), 'dummy.png').toFile('dummy.png', true)
+FileBox.fromDataURL(battle.getSnapshot(1).toDataURL(), 'red.png').toFile(path.join(__dirname, './../tmp/black.png'), true)
